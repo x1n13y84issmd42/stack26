@@ -1,0 +1,73 @@
+name: stack26
+
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: stack26_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+    # TODO: Ideally these shoud come from Vault
+      RABBITMQ_DEFAULT_USER: xxx
+      RABBITMQ_DEFAULT_PASS: zzz
+
+  vault:
+    image: hashicorp/vault
+    container_name: stack26_vault
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: myroot
+      VAULT_TOKEN: myroot
+      VAULT_ADDR: 'http://vault:8200'
+    stdin_open: true
+    tty: true
+    command: server -dev -dev-listen-address=0.0.0.0:8200
+
+  vault_seed:
+    image: hashicorp/vault
+    container_name: stack26_vault_seed
+    depends_on:
+      - vault
+    environment:
+      VAULT_ADDR: 'http://vault:8200'
+      VAULT_TOKEN: 'myroot'
+    volumes:
+      - ./vault:/usr/local/bin/
+    # entrypoint: sh -c '/usr/local/bin/wait-for-it.sh vault:8200 -- true; /usr/local/bin/seed.sh'
+    entrypoint: sh -c '/usr/local/bin/seed.sh'
+
+  prometheus:
+    image: prom/prometheus
+    container_name: stack26_prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-storage:/prometheus
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana
+    container_name: stack26_grafana
+    ports:
+      - 3000:3000
+    environment:
+      # TODO: should come from Vault
+      - GF_SECURITY_ADMIN_PASSWORD=gpass
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+volumes:
+  prometheus-storage:
+  grafana-storage:
+
+networks:
+  monitoring:
+    # external: true

@@ -1,0 +1,10 @@
+#!/bin/sh
+
+secret() {
+	../infra/secret.sh $1
+}
+
+PORT=$(secret ui_port) \
+	API_HOST=$(secret api_host) \
+	API_PORT=$(secret api_port) \
+	node dist/index.js

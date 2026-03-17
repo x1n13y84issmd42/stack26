@@ -1,0 +1,59 @@
+<html>
+	<head>
+		<script>
+			const apiDomain = "<%= API_URL %>";
+
+			const api = {
+				test: () => fetch('GET', 'test'),
+			};
+
+			function fetch(m, ep) {
+				const xhr = new XMLHttpRequest();
+				xhr.open(m.toLocaleUpperCase(), `http://${apiDomain}/${ep}`, true);
+
+				return new Promise((resolve, reject) => {
+					xhr.onload = function () {
+						if (xhr.status === 200) {
+							const data = JSON.parse(xhr.responseText);
+							resolve(data);
+						} else {
+							reject('Request failed. Status:', xhr.status, xhr.statusText);
+						}
+					};
+					
+					xhr.onerror = function () {
+						reject('Network error occurred');
+					};
+	
+					xhr.send();
+				});
+			}
+
+			function apiTest() {
+				api.test().then(resp => console.dir(resp));
+			}
+
+			let counter = 1;
+
+			function wsSend() {
+				ws.send(JSON.stringify({msg: `UI says hello!`, counter}));
+				counter++;
+			}
+
+			const ws = new WebSocket(`ws://${apiDomain}/ws`);
+			ws.onopen = () => console.log('ws open');
+			ws.onclose = () => console.log('ws close');
+			ws.onerror = (event) => console.dir({msg: 'ws error', event});
+			// ws.onmessage = (event) => console.dir({msg: 'ws message', event});
+			ws.onmessage = (event) => {
+				console.log(`Msg: ${event.data}`);
+				wsmsg.innerHTML += `${event.data}<br/>`;
+			};
+		</script>
+	</head>
+	<body>
+		<button onclick="apiTest()">/test</button>
+		<button onclick="wsSend()">Say hi to back end</button>
+		<div id="wsmsg" style="width:800px;height:400px;border:1px gray dashed;"></div>
+	</body>
+</html>

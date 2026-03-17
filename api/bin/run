@@ -1,0 +1,11 @@
+#!/bin/sh
+
+secret() {
+	../infra/secret.sh $1
+}
+
+PORT=$(secret api_port) \
+	AMQP_HOST=$(secret amqp_host) \
+	AMQP_USER=$(secret amqp_user) \
+	AMQP_PASS=$(secret amqp_pass) \
+	node --inspect dist/api/src/index.js
